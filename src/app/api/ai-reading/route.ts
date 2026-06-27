@@ -1,14 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase-server'
-import { getUserAccess, hasAccess } from '@/lib/access'
 
 export async function POST(req: NextRequest) {
-  const supabase = createClient()
+  const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: '認証が必要です' }, { status: 401 })
-
-  const access = await getUserAccess(user.id)
-  if (!hasAccess(access)) return NextResponse.json({ error: '有効なプランが必要です' }, { status: 403 })
 
   const apiKey = process.env.ANTHROPIC_API_KEY
   if (!apiKey) return NextResponse.json({ error: 'APIキーが設定されていません' }, { status: 400 })
