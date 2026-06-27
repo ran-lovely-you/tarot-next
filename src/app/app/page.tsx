@@ -1,19 +1,21 @@
 import { redirect } from 'next/navigation'
-import { createClient } from '@/lib/supabase-server'
-import { getUserAccess, hasAccess } from '@/lib/access'
+import { createClient, createAdminClient } from '@/lib/supabase-server'
 import TarotApp from './TarotApp'
 
 export default async function AppPage() {
-  const supabase = createClient()
+  const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
 
-  const access = await getUserAccess(user.id)
-  if (!hasAccess(access)) redirect('/pricing')
+  const admin = createAdminClient()
+  const { data: access } = await admin.from('user_access')
+    .select('*').eq('user_id', user!.id).single()
+
+  if (!access?.access_active) redirect('/pricing')
 
   return (
     <TarotApp
-      userEmail={user.email ?? ''}
+      userEmail={user!.email ?? ''}
       accessType={access?.access_type ?? 'onetime'}
       checkoutSuccess={false}
     />
