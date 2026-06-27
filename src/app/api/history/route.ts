@@ -1,10 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase-server'
-import { createAdminClient } from '@/lib/supabase-server'
-import { getUserAccess, hasAccess } from '@/lib/access'
+import { createClient, createAdminClient } from '@/lib/supabase-server'
 
 async function getAuthedUser() {
-  const supabase = createClient()
+  const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   return user
 }
@@ -12,9 +10,6 @@ async function getAuthedUser() {
 export async function GET() {
   const user = await getAuthedUser()
   if (!user) return NextResponse.json({ error: '認証が必要です' }, { status: 401 })
-  const access = await getUserAccess(user.id)
-  if (!hasAccess(access)) return NextResponse.json({ error: '有効なプランが必要です' }, { status: 403 })
-
   const admin = createAdminClient()
   const { data } = await admin.from('reading_history')
     .select('id, created_at, spread_label, question, data_json')
@@ -27,16 +22,13 @@ export async function GET() {
 export async function POST(req: NextRequest) {
   const user = await getAuthedUser()
   if (!user) return NextResponse.json({ error: '認証が必要です' }, { status: 401 })
-  const access = await getUserAccess(user.id)
-  if (!hasAccess(access)) return NextResponse.json({ error: '有効なプランが必要です' }, { status: 403 })
-
   const { spreadLabel, question, data } = await req.json()
   const admin = createAdminClient()
   await admin.from('reading_history').insert({
-    user_id:     user.id,
+    user_id: user.id,
     spread_label: spreadLabel || '',
-    question:    question || '',
-    data_json:   data
+    question: question || '',
+    data_json: data
   })
   return NextResponse.json({ ok: true })
 }
