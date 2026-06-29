@@ -1,28 +1,17 @@
-'use client'
-import { useEffect } from 'react'
-import { createClient } from '@/lib/supabase-browser'
+import { NextRequest, NextResponse } from 'next/server'
 
-export default function ConfirmPage() {
-  useEffect(() => {
-    const supabase = createClient()
-    supabase.auth.getSession().then(async ({ data: { session } }) => {
-      if (session?.user) {
-        // user_accessを初期化
-        await fetch('/api/auth/init', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ userId: session.user.id })
-        })
-        window.location.href = '/pricing'
-      } else {
-        window.location.href = '/login?error=auth'
-      }
-    })
-  }, [])
+export async function POST(req: NextRequest) {
+  const { userId } = await req.json()
+  if (!userId) return NextResponse.json({ error: 'No userId' }, { status: 400 })
 
-  return (
-    <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#0e0a22', color: '#d4af37', fontFamily: 'serif', fontSize: 18 }}>
-      ✦ 認証中...
-    </div>
+  const { createClient } = require('@supabase/supabase-js')
+  const admin = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
   )
+  await admin.from('user_access').upsert(
+    { user_id: userId },
+    { onConflict: 'user_id', ignoreDuplicates: true }
+  )
+  return NextResponse.json({ ok: true })
 }
