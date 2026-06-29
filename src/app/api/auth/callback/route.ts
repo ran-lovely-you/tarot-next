@@ -5,10 +5,8 @@ import { cookies } from 'next/headers'
 export async function GET(request: NextRequest) {
   const { searchParams, origin } = new URL(request.url)
   const code = searchParams.get('code')
-
-  if (!code) {
-    return NextResponse.redirect(`${origin}/login?error=no_code`)
-  }
+  const token_hash = searchParams.get('token_hash')
+  const type = searchParams.get('type')
 
   try {
     const cookieStore = await cookies()
@@ -25,21 +23,24 @@ export async function GET(request: NextRequest) {
       }
     )
 
-    const { data, error } = await supabase.auth.exchangeCodeForSession(code)
-    
-    if (error) {
-      console.error('Auth error:', error.message)
-      return NextResponse.redirect(`${origin}/login?error=auth`)
+    let user = null
+
+    if (code) {
+      const { data, error } = await supabase.auth.exchangeCodeForSession(code)
+      if (!error) user = data.user
+    } else if (token_hash && type) {
+      const { data, error } = await supabase.auth.verifyOtp({ token_hash, type: type as any })
+      if (!error) user = data.user
     }
 
-    if (data.user) {
+    if (user) {
       const { createClient } = require('@supabase/supabase-js')
       const admin = createClient(
         process.env.NEXT_PUBLIC_SUPABASE_URL!,
         process.env.SUPABASE_SERVICE_ROLE_KEY!
       )
       await admin.from('user_access').upsert(
-        { user_id: data.user.id },
+        { user_id: user.id },
         { onConflict: 'user_id', ignoreDuplicates: true }
       )
       return NextResponse.redirect(`${origin}/pricing`)
