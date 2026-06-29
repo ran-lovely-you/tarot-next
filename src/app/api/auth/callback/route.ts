@@ -1,17 +1,25 @@
 import { NextRequest, NextResponse } from 'next/server'
 
-export async function POST(req: NextRequest) {
-  const { userId } = await req.json()
-  if (!userId) return NextResponse.json({ error: 'No userId' }, { status: 400 })
-
-  const { createClient } = require('@supabase/supabase-js')
-  const admin = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
+export async function GET(request: NextRequest) {
+  const { origin, hash } = new URL(request.url)
+  
+  // implicitフローの場合はフラグメント（#以降）をクライアントで処理
+  return new NextResponse(
+    `<!DOCTYPE html>
+<html>
+<head><title>Loading...</title></head>
+<body>
+<script>
+  const hash = window.location.hash
+  if (hash && hash.includes('access_token')) {
+    // セッションをSupabaseに渡してリダイレクト
+    window.location.href = '/auth/confirm' + hash
+  } else {
+    window.location.href = '/login?error=auth'
+  }
+</script>
+</body>
+</html>`,
+    { headers: { 'Content-Type': 'text/html' } }
   )
-  await admin.from('user_access').upsert(
-    { user_id: userId },
-    { onConflict: 'user_id', ignoreDuplicates: true }
-  )
-  return NextResponse.json({ ok: true })
 }
