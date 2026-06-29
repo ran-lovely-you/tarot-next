@@ -16,7 +16,10 @@ export default function LoginPage() {
     setLoading(true)
     const { error } = await supabase.auth.signInWithOtp({
       email,
-      options: { emailRedirectTo: `${location.origin}/api/auth/callback` }
+      options: {
+        shouldCreateUser: true,
+        emailRedirectTo: `https://tarot-next-neon.vercel.app/api/auth/callback`
+      }
     })
     setLoading(false)
     if (error) { setError(error.message); return }
@@ -64,7 +67,7 @@ export default function LoginPage() {
 
 const styles: Record<string, React.CSSProperties> = {
   bg:       { minHeight: '100vh', display: 'flex', flexDirection: 'column', background: '#0e0a22' },
-  nav:      { display: 'flex', alignItems: 'center', padding: '14px 28px', borderBottom: '1px solid #4a2e7a', position: 'relative', zIndex: 10 },
+  nav:      { display: 'flex', alignItems: 'center', padding: '14px 28px', borderBottom: '1px solid #4a2e7a' },
   brand:    { fontFamily: "'Cinzel Decorative', serif", color: '#d4af37', fontSize: 16, letterSpacing: '0.12em' },
   center:   { flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '40px 20px' },
   card:     { background: 'rgba(26,16,53,0.85)', border: '1px solid #4a2e7a', borderRadius: 16, padding: '40px 36px', maxWidth: 400, width: '100%', textAlign: 'center' },
