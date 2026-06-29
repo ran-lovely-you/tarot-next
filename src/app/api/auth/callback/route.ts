@@ -6,7 +6,11 @@ export async function GET(request: NextRequest) {
   const { searchParams, origin } = new URL(request.url)
   const code = searchParams.get('code')
 
-  if (code) {
+  if (!code) {
+    return NextResponse.redirect(`${origin}/login?error=no_code`)
+  }
+
+  try {
     const cookieStore = await cookies()
     const supabase = createServerClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -20,8 +24,15 @@ export async function GET(request: NextRequest) {
         }
       }
     )
+
     const { data, error } = await supabase.auth.exchangeCodeForSession(code)
-    if (!error && data.user) {
+    
+    if (error) {
+      console.error('Auth error:', error.message)
+      return NextResponse.redirect(`${origin}/login?error=auth`)
+    }
+
+    if (data.user) {
       const { createClient } = require('@supabase/supabase-js')
       const admin = createClient(
         process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -33,6 +44,9 @@ export async function GET(request: NextRequest) {
       )
       return NextResponse.redirect(`${origin}/pricing`)
     }
+  } catch (e) {
+    console.error('Callback error:', e)
   }
+
   return NextResponse.redirect(`${origin}/login?error=auth`)
 }
