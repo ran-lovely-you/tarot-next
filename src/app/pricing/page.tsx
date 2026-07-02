@@ -36,10 +36,10 @@ export default function PricingPage() {
   async function checkout(type: string) {
     if (!user) { location.href = '/login'; return }
     if (access?.access_active) { location.href = '/app'; return }
-    const res = await fetch('/api/checkout', {
+const res = await fetch('/api/checkout', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ type })
+      body: JSON.stringify({ type, userId: user.id, userEmail: user.email })
     })
     const data = await res.json()
     if (data.url) location.href = data.url
