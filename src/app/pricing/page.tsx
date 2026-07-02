@@ -36,7 +36,7 @@ export default function PricingPage() {
   async function checkout(type: string) {
     if (!user) { location.href = '/login'; return }
     if (access?.access_active) { location.href = '/app'; return }
-const res = await fetch('/api/checkout', {
+    const res = await fetch('/api/checkout', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ type, userId: user.id, userEmail: user.email })
@@ -158,7 +158,7 @@ const res = await fetch('/api/checkout', {
         <span>© 2025 タロット占い 天星鑑定　運営：美好蘭</span>
         <div style={{ display: 'flex', gap: 20 }}>
           <a href="/tokusho" style={s.footerLink}>特定商取引法に基づく表記</a>
-          <a href="mailto:support@example.com" style={s.footerLink}>お問い合わせ</a>
+          <a href="mailto:ran-miyoshi@outlook.jp" style={s.footerLink}>お問い合わせ</a>
         </div>
       </footer>
     </div>
