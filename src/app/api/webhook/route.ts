@@ -18,18 +18,32 @@ export async function POST(req: NextRequest) {
   if (event.type === 'checkout.session.completed') {
     const uid = obj.client_reference_id
     const mode = obj.mode
+
+    console.log('Webhook received:', { uid, mode, customer: obj.customer })
+
+    if (!uid) {
+      console.error('No client_reference_id found')
+      return NextResponse.json({ received: true })
+    }
+
     if (mode === 'payment') {
-      await admin.from('user_access').upsert({
-        user_id: uid, access_type: 'onetime', access_active: true,
-        stripe_customer_id: obj.customer,
+      const { error } = await admin.from('user_access').upsert({
+        user_id: uid,
+        access_type: 'onetime',
+        access_active: true,
+        stripe_customer_id: obj.customer || null,
       }, { onConflict: 'user_id' })
+      console.log('Upsert result:', error)
     } else if (mode === 'subscription') {
-      await admin.from('user_access').upsert({
-        user_id: uid, access_type: 'subscription', access_active: true,
-        stripe_customer_id: obj.customer,
-        stripe_subscription_id: obj.subscription,
+      const { error } = await admin.from('user_access').upsert({
+        user_id: uid,
+        access_type: 'subscription',
+        access_active: true,
+        stripe_customer_id: obj.customer || null,
+        stripe_subscription_id: obj.subscription || null,
         stripe_subscription_status: 'active',
       }, { onConflict: 'user_id' })
+      console.log('Upsert result:', error)
     }
   }
 
